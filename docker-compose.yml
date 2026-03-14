@@ -3,6 +3,18 @@ version: "3.8"
 name: devstack
 
 services:
+  portainer:
+    image: docker.io/portainer/portainer-ce
+    ports:
+      - "9443:9443"
+      - "8000:8000"
+    volumes:
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:Z
+      - ./data/portainer:/data
+    security_opt:
+      - label=disable
+    restart: unless-stopped
+
   postgresql:
     image: postgres:17
     networks:
@@ -14,6 +26,16 @@ services:
       - ./data/postgresql:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+  mariadb:
+    image: mariadb:lts
+    environment:
+      MARIADB_ROOT_PASSWORD: toor
+      TZ: Asia/Jakarta
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
 
   rabbitmq:
     build:
@@ -59,6 +81,9 @@ services:
       - ./data/n8n:/home/node/.n8n:Z
     ports:
       - "5678:5678"
+
+volumes:
+  n8n_data:
 
 networks:
   bridge:
