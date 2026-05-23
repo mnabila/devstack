@@ -82,6 +82,18 @@ services:
     ports:
       - "5678:5678"
 
+  9router:
+    image: decolua/9router:latest
+    environment:
+      - PORT=20128
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_BASE_URL=http://127.0.0.1:20128
+    volumes:
+      - ./data/9router:/app/data
+    ports:
+      - "20128:20128"
+    restart: unless-stopped
+
 volumes:
   n8n_data:
 
