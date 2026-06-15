@@ -1,0 +1,85 @@
+name: observability
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    networks:
+      - bridge
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./services/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  prometheus:
+    image: prom/prometheus:latest
+    networks:
+      - bridge
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:latest
+    networks:
+      - bridge
+    command:
+      - "-config.file=/etc/loki/loki.yaml"
+    volumes:
+      - ./services/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  tempo:
+    image: grafana/tempo:latest
+    networks:
+      - bridge
+    command:
+      - "-config.file=/etc/tempo/tempo.yaml"
+    volumes:
+      - ./services/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"
+
+  alloy:
+    image: grafana/alloy:latest
+    networks:
+      - bridge
+    command:
+      - "run"
+      - "/etc/alloy/config.alloy"
+    volumes:
+      - ./services/alloy/config.alloy:/etc/alloy/config.alloy:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+volumes:
+  grafana_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+
+networks:
+  bridge:
+    driver: bridge
