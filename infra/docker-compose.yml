@@ -80,17 +80,45 @@ services:
     ports:
       - "5678:5678"
 
-  9router:
-    image: decolua/9router:latest
+  rustfs:
+    image: rustfs/rustfs:latest
     environment:
-      - PORT=20128
-      - HOSTNAME=0.0.0.0
+      - RUSTFS_ROOT_USER=admin
+      - RUSTFS_ROOT_PASSWORD=admin123
+    volumes:
+      - rustfs:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  omnirouter:
+    image: diegosouzapw/omniroute:latest
+    networks:
+      - bridge
+    environment:
+      # Redis from infra stack
+      - REDIS_URL=redis://redis:6379
+      - DATA_DIR=/app/data
+      # Native default ports
+      - DASHBOARD_PORT=20128
+      - API_PORT=20129
+      - LIVE_WS_PORT=20132
       - NEXT_PUBLIC_BASE_URL=http://127.0.0.1:20128
     volumes:
-      - ./data/9router:/app/data
+      - ./data/omnirouter:/app/data:Z,U
     ports:
       - "20128:20128"
+      - "20129:20129"
+      - "20132:20132"
+    depends_on:
+      - redis
+    stop_grace_period: 40s
     restart: unless-stopped
+
+volumes:
+  rustfs:
 
 networks:
   bridge:
